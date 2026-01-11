@@ -1,0 +1,54 @@
+name: Test Dotfiles
+
+on:
+  push:
+    branches: [ main, claude/* ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Install Zsh
+      run: sudo apt-get update && sudo apt-get install -y zsh
+
+    - name: Check .zshrc syntax
+      run: zsh -n .zshrc
+
+    - name: Check .gitconfig syntax
+      run: git config --list --file .gitconfig
+
+    - name: Check install.sh syntax
+      run: bash -n install.sh
+
+    - name: Run install.sh
+      run: ./install.sh
+
+    - name: Verify symlinks created
+      run: |
+        if [ ! -L "$HOME/.zshrc" ]; then
+          echo "Error: .zshrc symlink not created"
+          exit 1
+        fi
+        if [ ! -L "$HOME/.gitconfig" ]; then
+          echo "Error: .gitconfig symlink not created"
+          exit 1
+        fi
+        echo "All symlinks created successfully"
+
+    - name: Verify symlinks point to correct files
+      run: |
+        if [ "$(readlink -f $HOME/.zshrc)" != "$PWD/.zshrc" ]; then
+          echo "Error: .zshrc symlink points to wrong file"
+          exit 1
+        fi
+        if [ "$(readlink -f $HOME/.gitconfig)" != "$PWD/.gitconfig" ]; then
+          echo "Error: .gitconfig symlink points to wrong file"
+          exit 1
+        fi
+        echo "All symlinks point to correct files"
